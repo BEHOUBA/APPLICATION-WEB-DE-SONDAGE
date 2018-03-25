@@ -1,0 +1,29 @@
+{{ define "content"}}
+<div>
+    <div class="text-center">
+        <h2>CREATE NEW VOTING POLL</h2>
+    </div>
+    <div class="new-poll-form my-4 mx-5">
+        <form action="" class="my-4" name="poll-form">
+            <div class="form-group">
+                <label for="pool-name">POLL NAME</label>
+                <input type="text" name="new-poll-name" class="form-control" placeholder="Entrer poll name" id="pool-name" required>
+            </div>
+            <div>
+                <p>OPTIONS</p>
+            </div>
+            <div class="form-row">
+                <input type="text" name="option" class="form-control col-sm mr-4" placeholder="Option here" id="option" required>
+                <input type="text" name="all-options" id="all-options" style="display:none;">
+                <a onclick="addOption()" class="btn btn-lg btn-success col-sm">ADD OPTION</a>
+            </div>
+            <div id="options">
+
+            </div>
+            <div class="form-group mt-5">
+                <input type="submit" value="CREATE POLL" class="btn btn-lg btn-block btn-success">
+            </div>
+        </form>
+    </div>
+</div>
+{{ end }}

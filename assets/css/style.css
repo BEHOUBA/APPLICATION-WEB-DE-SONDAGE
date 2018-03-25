@@ -1,0 +1,30 @@
+body nav {
+    background: wheat;
+    color: white;
+}
+
+.page-body {
+    min-height: 300px;
+    background: rgb(210, 226, 233) !important;
+    padding: 10px 5px;
+    border: 1px solid rgb(190, 202, 202);
+}
+
+.page-body p {
+    font-size: 22px;
+}
+
+.poll-card{
+    cursor: pointer;
+    padding: 5px;
+    margin: 5px;
+}
+.card {
+    border: 3px solid !important;
+}
+.poll-card:hover{
+    box-shadow: 6px 3px 10px;
+}
+.new-poll-form{
+    padding: 20px 40px;
+}
