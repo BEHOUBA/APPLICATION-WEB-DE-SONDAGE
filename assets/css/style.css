@@ -28,3 +28,6 @@ body nav {
 .new-poll-form{
     padding: 20px 40px;
 }
+.footer p{
+    text-align: right;
+}

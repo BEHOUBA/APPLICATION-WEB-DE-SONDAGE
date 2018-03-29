@@ -1,0 +1,24 @@
+{{ define "content" }}
+<!DOCTYPE html>
+<div class="signup px-5">
+    <h2 class="text-center">SIGNUP TO CREATE A POLL</h2>
+    <form action="/new-user" class="mx-auto" id="new-user-form">
+        <div class="form-group">
+            <label for="name">Name: </label>
+            <input type="text" id="name" name="name" class="form-control" placeholder="Enter you name" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email: </label>
+            <input type="email" name="email" id="email" placeholder="Enter your email" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password" placeholder="Create your password"  class="form-control mb-2" required>
+            <input type="password" name="password" id="password2" placeholder="Reapet your password"  class="form-control" required>
+        </div>
+        <div>
+            <a onclick="submitNewUser()" value="SIGNUP" class="btn btn-success btn-lg btn-block">SIGNUP</a>
+        </div>
+    </form>
+</div>
+{{ end }}
