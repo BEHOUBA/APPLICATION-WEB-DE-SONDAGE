@@ -1,13 +1,15 @@
-var count = 0;
+let count = 0;
 
-var option = document.getElementById("option");
-var options = document.getElementById("options");
-var password1 = document.getElementById("password");
-var password2 = document.getElementById("password2")
+const option = document.getElementById("option");
+const options = document.getElementById("options");
+const password1 = document.getElementById("password");
+const password2 = document.getElementById("password2");
+const name = document.getElementById("name");
+const email = document.getElementById("email");
 
 function addOption(){
        if (option.value == "") {
-           return
+           return;
        }
        if( count >= 2 ){
             option.required = false;
@@ -20,7 +22,7 @@ function addOption(){
 function submitNewPoll(){
     if (count < 2) {
         alert("PLEASE ADD AT LEAST TWO OPTIONS!")
-        return
+        return;
     }
     option.value = "";
     option.value = options.innerText;
@@ -28,12 +30,19 @@ function submitNewPoll(){
 }
 
 function submitNewUser(){
-    if (password1.value.length < 6) {
-        alert("PASSWORD MUST BE AT LEAST 6 CHARACTERES LONG...")
-        return
-    }else if (password1.value !== password2.value) {
+    var emailReg = /\S+@\S+\.\S+/;
+    if ( name.value.length < 3 ){
+        alert("NAME MUST BE AT LEAST 3 CHARACTERES LONG !!!");
+        return;
+    } else if (!emailReg.test(email.value)) {
+        alert("PLEASE ENTER VALID EMAIL ADDRESS !!!");
+        return;
+    } else if (password1.value.length < 3) {
+        alert("PASSWORD MUST BE AT LEAST 3 CHARACTERES LONG !!!")
+        return;
+    } else if (password1.value !== password2.value) {
         alert("PASSWORD DID NOT MATCH...")
-        return
+        return;
     }
     document.getElementById("new-user-form").submit();
 }
