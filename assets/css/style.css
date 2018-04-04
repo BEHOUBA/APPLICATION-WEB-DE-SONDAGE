@@ -31,3 +31,7 @@ body nav {
 .footer p{
     text-align: right;
 }
+
+form{
+    max-width: 400px;
+}

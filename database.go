@@ -39,23 +39,22 @@ func (user *User) isEmailInDatabase() bool {
 	stmt := "SELECT * FROM USERS WHERE EMAIL=$1;"
 	row := db.QueryRow(stmt, user.Email)
 	row.Scan(&user.id, &user.Name, &u.Email, &u.Password, &user.hash)
-	if u.Email != "" {
-		fmt.Println("user email is correct", u)
+	if u.Email == user.Email {
+		fmt.Println("user email is in the database", u)
 		return true
 	}
-	fmt.Println("email does not exist")
+	fmt.Println("email does not exist in the database")
 	return false
 }
 
-func (user *User) isPasswordCorrect() bool {
+func (user *User) authentification() bool {
 	var u = User{}
 	stmt := "SELECT * FROM USERS WHERE PASSWORD=$1;"
 	row := db.QueryRow(stmt, user.Password)
 	row.Scan(&user.id, &user.Name, &u.Email, &u.Password, &user.hash)
-	if u.Password != "" {
-		fmt.Println("password is correct", u)
+	if user.Password == u.Password && u.Email == user.Email {
+		fmt.Println("user authentificated !")
 		return true
 	}
-	fmt.Println("password is not correct")
 	return false
 }
