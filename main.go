@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -8,6 +9,8 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 )
+
+var tmp *template.Template
 
 type User struct {
 	id       int
@@ -25,21 +28,20 @@ func (user *User) hashPassword() string {
 	user.hash = string(hashByte)
 	return user.hash
 }
+
 func (user *User) createSession(w http.ResponseWriter) {
+	row := db.QueryRow("UPDATE USERS SET PASSWORD_HASH=$1 WHERE EMAIL=$2", user.hashPassword(), user.Email)
+	row.Scan(&user.id, &user.Name, &user.Password, &user.hash)
 	cookie := &http.Cookie{
 		Name:     "voting_app",
 		Value:    user.hash,
 		HttpOnly: true,
-		MaxAge:   600,
+		MaxAge:   2000,
 	}
+	fmt.Println("HASH UPDATED...", user.hash)
 	http.SetCookie(w, cookie)
 	return
 }
-
-type Session struct {
-}
-
-var tmp *template.Template
 
 func main() {
 	router := http.NewServeMux()
@@ -51,6 +53,8 @@ func main() {
 	router.HandleFunc("/all", all)
 	router.HandleFunc("/new-poll", newPoll)
 	router.HandleFunc("/new-user", newUser)
+
+	router.HandleFunc("/create-pool", createPoll)
 
 	router.HandleFunc("/login", login)
 	router.HandleFunc("/logout", logout)

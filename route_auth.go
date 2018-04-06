@@ -5,14 +5,35 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 )
 
+var currentUser User
+var homeData HomePageData
+var err error
+
+type HomePageData struct {
+	CurrentUser    User
+	AllPollsTitles []string
+}
+
 func homePage(w http.ResponseWriter, r *http.Request) {
-	generateHTML(w, r, "", "home", "home.content", "footer")
+	homeData.AllPollsTitles, err = getAllPollTitle()
+	if err != nil {
+		log.Println(err)
+	}
+	cookie, err := r.Cookie("voting_app")
+	if err != nil {
+		log.Println(err)
+	} else {
+		currentUser, err = getUserDataFromDB(cookie.Value)
+		homeData.CurrentUser = currentUser
+	}
+	generateHTML(w, r, homeData, "home", "home.content", "footer")
 }
 
 func all(w http.ResponseWriter, r *http.Request) {
-	generateHTML(w, r, "", "home", "all.content", "footer")
+	generateHTML(w, r, homeData, "home", "all.content", "footer")
 }
 
 func newPoll(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +41,7 @@ func newPoll(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/loginPage", 302)
 		return
 	}
-	generateHTML(w, r, "", "home", "new.poll", "footer")
+	generateHTML(w, r, homeData, "home", "new.poll", "footer")
 }
 
 func signupPage(w http.ResponseWriter, r *http.Request) {
@@ -59,6 +80,22 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(u)
 }
 
+func createPoll(w http.ResponseWriter, r *http.Request) {
+	if !alreadyLoggedIn(r) {
+		http.Redirect(w, r, "/loginPage", 302)
+		return
+	}
+	r.ParseForm()
+	poll := Poll{r.FormValue("poll-name"), strings.Split(r.FormValue("poll-options"), "×")[1:]}
+	err := poll.addPollToDB()
+	if err != nil {
+		log.Println("failed to add create poll", err)
+		fmt.Fprintln(w, "Error occured please contact admistrator: behouba@gmail.com.\n Error:", err)
+		return
+	}
+	generateHTML(w, r, "", "home", "current-poll", "footer")
+}
+
 func getUserData(r *http.Request) (u User) {
 	r.ParseForm()
 	u.Name = r.FormValue("name")
@@ -77,8 +114,12 @@ func generateHTML(writer http.ResponseWriter, r *http.Request, data interface{},
 	} else {
 		files = append(files, "templates/header.html")
 	}
-	templ := template.Must(template.ParseFiles(files...))
-	templ.ExecuteTemplate(writer, "layout", "MANASSE")
+	templ, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	templ.ExecuteTemplate(writer, "layout", data)
 }
 
 func alreadyLoggedIn(r *http.Request) bool {
@@ -98,5 +139,6 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println("invalid login!")
+	fmt.Fprintln(w, "Email or Password is wrong... or maybe you are not registred yet...")
 	http.Redirect(w, r, "/loginPage", 302)
 }
