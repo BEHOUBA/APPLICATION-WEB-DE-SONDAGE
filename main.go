@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -44,17 +45,20 @@ func (user *User) createSession(w http.ResponseWriter) {
 }
 
 func main() {
-	router := http.NewServeMux()
+	router := mux.NewRouter()
 
 	files := http.FileServer(http.Dir("assets"))
-	router.Handle("/assets/", http.StripPrefix("/assets/", files))
+	router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", files))
 
 	router.HandleFunc("/", homePage)
 	router.HandleFunc("/all", all)
 	router.HandleFunc("/new-poll", newPoll)
-	router.HandleFunc("/new-user", newUser)
+	router.HandleFunc("/new-user/", newUser)
 
+	router.HandleFunc("/current/{id}", current)
 	router.HandleFunc("/create-pool", createPoll)
+
+	router.HandleFunc("/submit-vote", submitVote)
 
 	router.HandleFunc("/login", login)
 	router.HandleFunc("/logout", logout)

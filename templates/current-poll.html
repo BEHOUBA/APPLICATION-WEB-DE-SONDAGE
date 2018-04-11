@@ -1,5 +1,25 @@
 {{ define "content"}}
-<div>
-    
+<div class="mx-5">
+    <div>
+        <h1>POLL NAME: </h1>
+    </div>
+    <div>
+        <form action="/submit-vote" method="POST">
+            {{ if .CurrentUser }}
+            <div class="form-group">
+                    {{ range  .CurrentPoll.Options }}
+                    <div class="custom-control custom-radio mx-1 my-4">
+                        <input type="radio" id="{{ . }}" name="option" class="custom-control-input" value="{{ . }}">
+                        <label class="custom-control-label" for="{{ . }}">{{ . }}</label>
+                    </div>
+                    {{ end }}
+                    <div  class="mx-1 my-4">
+                        <input type="submit" name="" id="" value="submit vote" class="btn btn-success btn-sm">
+                    </div>
+            </div>
+        </form>
+        {{ end }}
+        </div>
+    </div>
 </div>
 {{ end }}

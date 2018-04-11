@@ -1,3 +1,6 @@
+body html{
+    height: 100%
+}
 body nav {
     background: wheat;
     color: white;
@@ -28,8 +31,10 @@ body nav {
 .new-poll-form{
     padding: 20px 40px;
 }
-.footer p{
-    text-align: right;
+.footer{
+    position: fixed;
+    bottom: 10px;
+    right: 25px;
 }
 
 form{

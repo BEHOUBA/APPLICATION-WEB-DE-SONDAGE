@@ -5,30 +5,35 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 var currentUser User
-var homeData HomePageData
+var homeData PageData
 var err error
+var currentPoll Poll
 
-type HomePageData struct {
-	CurrentUser    User
-	AllPollsTitles []string
+type PageData struct {
+	CurrentUser         User
+	AllPollsIdAndTitles map[int]string
+	CurrentPoll         Poll
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
-	homeData.AllPollsTitles, err = getAllPollTitle()
+	homeData.AllPollsIdAndTitles, err = getAllPollTitle(10)
+	fmt.Println(homeData.AllPollsIdAndTitles)
 	if err != nil {
 		log.Println(err)
 	}
-	cookie, err := r.Cookie("voting_app")
+
+	currentUser, err = getUserDataFromDB("voting_app", r)
 	if err != nil {
 		log.Println(err)
-	} else {
-		currentUser, err = getUserDataFromDB(cookie.Value)
-		homeData.CurrentUser = currentUser
 	}
+	homeData.CurrentUser = currentUser
 	generateHTML(w, r, homeData, "home", "home.content", "footer")
 }
 
@@ -86,7 +91,7 @@ func createPoll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.ParseForm()
-	poll := Poll{r.FormValue("poll-name"), strings.Split(r.FormValue("poll-options"), "×")[1:]}
+	poll := Poll{Title: r.FormValue("poll-name"), Options: strings.Split(r.FormValue("poll-options"), "×")[1:]}
 	err := poll.addPollToDB()
 	if err != nil {
 		log.Println("failed to add create poll", err)
@@ -94,6 +99,41 @@ func createPoll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	generateHTML(w, r, "", "home", "current-poll", "footer")
+}
+
+func current(w http.ResponseWriter, r *http.Request) {
+	currentUser, _ = getUserDataFromDB("voting_app", r)
+	var data PageData
+	currentPoll.ID, err = strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	data.CurrentPoll.ID = currentPoll.ID
+	if alreadyLoggedIn(r) {
+		data.CurrentUser = currentUser
+		err = data.CurrentPoll.getPollOptions()
+		if err != nil {
+			log.Println(err)
+		}
+		generateHTML(w, r, data, "home", "current-poll", "footer")
+		return
+	}
+	generateHTML(w, r, false, "home", "current-poll", "footer")
+}
+
+func submitVote(w http.ResponseWriter, r *http.Request) {
+	currentUser, err = getUserDataFromDB("voting_app", r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	r.ParseForm()
+	vote := r.FormValue("option")
+	err = currentPoll.submitVote(vote)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	fmt.Fprintln(w, vote)
 }
 
 func getUserData(r *http.Request) (u User) {
@@ -117,7 +157,6 @@ func generateHTML(writer http.ResponseWriter, r *http.Request, data interface{},
 	templ, err := template.ParseFiles(files...)
 	if err != nil {
 		log.Println(err)
-		return
 	}
 	templ.ExecuteTemplate(writer, "layout", data)
 }
