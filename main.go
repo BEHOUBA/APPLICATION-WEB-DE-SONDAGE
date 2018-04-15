@@ -37,7 +37,7 @@ func (user *User) createSession(w http.ResponseWriter) {
 		Name:     "voting_app",
 		Value:    user.hash,
 		HttpOnly: true,
-		MaxAge:   2000,
+		MaxAge:   200000,
 	}
 	fmt.Println("HASH UPDATED...", user.hash)
 	http.SetCookie(w, cookie)
@@ -56,6 +56,7 @@ func main() {
 	router.HandleFunc("/new-user/", newUser)
 
 	router.HandleFunc("/current/{id}", current)
+	router.HandleFunc("/current/{id}/api/", sendJSON)
 	router.HandleFunc("/create-pool", createPoll)
 
 	router.HandleFunc("/submit-vote", submitVote)

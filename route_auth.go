@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -15,6 +16,13 @@ var currentUser User
 var homeData PageData
 var err error
 var currentPoll Poll
+var data PageData
+var cData chartData
+
+type chartData struct {
+	Title string          `json:"title"`
+	Data  [][]interface{} `json:"data"`
+}
 
 type PageData struct {
 	CurrentUser         User
@@ -23,8 +31,7 @@ type PageData struct {
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
-	homeData.AllPollsIdAndTitles, err = getAllPollTitle(10)
-	fmt.Println(homeData.AllPollsIdAndTitles)
+	homeData.AllPollsIdAndTitles, err = getAllPollTitle(10, 0)
 	if err != nil {
 		log.Println(err)
 	}
@@ -38,6 +45,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func all(w http.ResponseWriter, r *http.Request) {
+	homeData.AllPollsIdAndTitles, err = getAllPollTitle(100, 0)
 	generateHTML(w, r, homeData, "home", "all.content", "footer")
 }
 
@@ -86,12 +94,21 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func createPoll(w http.ResponseWriter, r *http.Request) {
+	var poll Poll
+	var options []string
 	if !alreadyLoggedIn(r) {
 		http.Redirect(w, r, "/loginPage", 302)
 		return
 	}
 	r.ParseForm()
-	poll := Poll{Title: r.FormValue("poll-name"), Options: strings.Split(r.FormValue("poll-options"), "×")[1:]}
+
+	poll.Title = r.FormValue("poll-name")
+	options = strings.Split(r.FormValue("poll-options"), "×")[1:]
+
+	for _, val := range options {
+		poll.Options = append(poll.Options, Option{Name: val})
+	}
+
 	err := poll.addPollToDB()
 	if err != nil {
 		log.Println("failed to add create poll", err)
@@ -101,24 +118,46 @@ func createPoll(w http.ResponseWriter, r *http.Request) {
 	generateHTML(w, r, "", "home", "current-poll", "footer")
 }
 
-func current(w http.ResponseWriter, r *http.Request) {
+func setCurrentData(w http.ResponseWriter, r *http.Request) {
 	currentUser, _ = getUserDataFromDB("voting_app", r)
-	var data PageData
 	currentPoll.ID, err = strconv.Atoi(mux.Vars(r)["id"])
+	data.CurrentUser = currentUser
+	data.CurrentPoll.ID = currentPoll.ID
+	data.CurrentPoll.setTitle()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	data.CurrentPoll.ID = currentPoll.ID
-	if alreadyLoggedIn(r) {
-		data.CurrentUser = currentUser
-		err = data.CurrentPoll.getPollOptions()
-		if err != nil {
-			log.Println(err)
-		}
-		generateHTML(w, r, data, "home", "current-poll", "footer")
+	data.CurrentPoll.getAndSetTotalVotes()
+	data.CurrentPoll.getPollOptions()
+
+	for i, opt := range data.CurrentPoll.Options {
+		data.CurrentPoll.Options[i].Votes, _ = opt.getAndSetTotalVotes()
+		data.CurrentPoll.Options[i].Percentage = float32(data.CurrentPoll.Options[i].Votes * 100 / data.CurrentPoll.Votes)
+	}
+}
+
+func current(w http.ResponseWriter, r *http.Request) {
+	setCurrentData(w, r)
+	generateHTML(w, r, data, "home", "current-poll", "footer")
+	return
+}
+
+func sendJSON(w http.ResponseWriter, r *http.Request) {
+	setCurrentData(w, r)
+	cData.Data = cData.Data[:0]
+	cData.Title = data.CurrentPoll.Title
+	for _, opt := range data.CurrentPoll.Options {
+		fmt.Println(opt)
+		val := []interface{}{opt.Name, opt.Votes}
+		cData.Data = append(cData.Data, val)
+	}
+
+	jsonByte, err := json.Marshal(cData)
+	if err != nil {
+		log.Println(err)
 		return
 	}
-	generateHTML(w, r, false, "home", "current-poll", "footer")
+	fmt.Fprint(w, string(jsonByte))
 }
 
 func submitVote(w http.ResponseWriter, r *http.Request) {

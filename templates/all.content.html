@@ -4,18 +4,14 @@
         <h1 class="text-center">ALL POLLS</h1>
         <hr>
         <div class="row text-center">
+            {{ range $key, $value := .AllPollsIdAndTitles }}
+        
             <div class="card poll-card col-sm">
-                <h3>POLL TITLE</h3>
+                <a href="/current/{{ $key }}">
+                    <h3>{{ $value }}</h3>
+                </a>
             </div>
-            <div class="card poll-card col-sm">
-                <h3>POLL TITLE</h3>
-            </div>
-            <div class="card poll-card col-sm">
-                <h3>POLL TITLE</h3>
-            </div>
-            <div class="card poll-card col-sm">
-                <h3>POLL TITLE</h3>
-            </div>
+            {{ end }}
         </div>
     </div>
 </div>

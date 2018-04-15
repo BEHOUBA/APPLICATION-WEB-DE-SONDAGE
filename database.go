@@ -13,7 +13,15 @@ import (
 type Poll struct {
 	ID      int
 	Title   string
-	Options []string
+	Options []Option
+	Votes   int
+}
+
+type Option struct {
+	Name       string
+	ID         int
+	Votes      int
+	Percentage float32
 }
 
 var db *sql.DB
@@ -91,7 +99,7 @@ func (p *Poll) addPollToDB() (err error) {
 	fmt.Println(pollID)
 	for _, val := range p.Options {
 		stmt2 := "INSERT INTO POLL_OPTIONS (OPTION_NAME, POLL) VALUES ($1, $2);"
-		_, err := db.Exec(stmt2, val, pollID)
+		_, err := db.Exec(stmt2, val.Name, pollID)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -101,10 +109,10 @@ func (p *Poll) addPollToDB() (err error) {
 	return
 }
 
-func getAllPollTitle(limit int) (idAndTitle map[int]string, err error) {
+func getAllPollTitle(limit, offset int) (idAndTitle map[int]string, err error) {
 	idAndTitle = map[int]string{}
-	stmt := "SELECT POLL_ID, POLL_NAME FROM POLLS LIMIT $1;"
-	rows, err := db.Query(stmt, limit)
+	stmt := "SELECT POLL_ID, POLL_NAME FROM POLLS LIMIT $1 OFFSET $2;"
+	rows, err := db.Query(stmt, limit, offset)
 	if err != nil {
 		log.Println(err)
 		return
@@ -119,7 +127,8 @@ func getAllPollTitle(limit int) (idAndTitle map[int]string, err error) {
 }
 
 func (p *Poll) getPollOptions() (err error) {
-	query := "SELECT OPTION_NAME FROM POLL_OPTIONS WHERE POLL=$1;"
+	p.Options = p.Options[:0]
+	query := "SELECT OPTION_ID, OPTION_NAME FROM POLL_OPTIONS WHERE POLL=$1;"
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		log.Println(err)
@@ -131,8 +140,8 @@ func (p *Poll) getPollOptions() (err error) {
 		return
 	}
 	for rows.Next() {
-		var option string
-		rows.Scan(&option)
+		var option Option
+		rows.Scan(&option.ID, &option.Name)
 		p.Options = append(p.Options, option)
 	}
 	return
@@ -179,4 +188,59 @@ func (p *Poll) asAlreadyVoted(user User) bool {
 	}
 	return false
 
+}
+
+func (p *Poll) getOptions() (err error) {
+	p.Options = p.Options[:0]
+	query := "SELECT OPTION_ID, OPTION_NAME FROM POLL_OPTIONS WHERE POLL=$1;"
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	rows, err := stmt.Query(p.ID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	for rows.Next() {
+		var opt Option
+		rows.Scan(&opt.ID, &opt.Name)
+		p.Options = append(p.Options, opt)
+	}
+	return
+}
+
+func (p *Poll) getAndSetTotalVotes() (count int, err error) {
+	stmt, err := db.Prepare("SELECT COUNT(*) FROM VOTES WHERE POLL_ID=$1;")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	stmt.QueryRow(p.ID).Scan(&count)
+	p.Votes = count
+	return
+}
+
+func (p *Poll) setTitle() (err error) {
+	var title string
+	stmt, err := db.Prepare("SELECT POLL_NAME FROM POLLS WHERE POLL_ID=$1;")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	stmt.QueryRow(p.ID).Scan(&title)
+	p.Title = title
+	return
+}
+
+func (opt *Option) getAndSetTotalVotes() (count int, err error) {
+	stmt, err := db.Prepare("SELECT COUNT(*) FROM VOTES WHERE OPTIONS=$1;")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	stmt.QueryRow(opt.ID).Scan(&count)
+	opt.Votes = count
+	return
 }
