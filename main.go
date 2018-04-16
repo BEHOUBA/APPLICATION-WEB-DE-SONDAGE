@@ -1,48 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/mux"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var tmp *template.Template
-
-type User struct {
-	id       int
-	Email    string
-	Name     string
-	Password string
-	hash     string
-}
-
-func (user *User) hashPassword() string {
-	hashByte, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
-	if err != nil {
-		panic("Failled to generate hash value from password!")
-	}
-	user.hash = string(hashByte)
-	return user.hash
-}
-
-func (user *User) createSession(w http.ResponseWriter) {
-	row := db.QueryRow("UPDATE USERS SET PASSWORD_HASH=$1 WHERE EMAIL=$2", user.hashPassword(), user.Email)
-	row.Scan(&user.id, &user.Name, &user.Password, &user.hash)
-	cookie := &http.Cookie{
-		Name:     "voting_app",
-		Value:    user.hash,
-		HttpOnly: true,
-		MaxAge:   200000,
-	}
-	fmt.Println("HASH UPDATED...", user.hash)
-	http.SetCookie(w, cookie)
-	return
-}
 
 func main() {
 	router := mux.NewRouter()

@@ -5,10 +5,9 @@
         <hr>
         <div class="row text-center">
             {{ range $key, $value := .AllPollsIdAndTitles }}
-        
-            <div class="card poll-card col-sm">
-                <a href="/current/{{ $key }}">
-                    <h3>{{ $value }}</h3>
+            <div class="col-sm-3">
+                <a href="/current/{{ $key }}" class="card poll-card m-1">
+                        <h3>{{ $value }}</h3>
                 </a>
             </div>
             {{ end }}

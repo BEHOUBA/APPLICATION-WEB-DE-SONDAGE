@@ -8,14 +8,13 @@
     <div class="recent">
         <h1 class="text-center">RECENT POLLS</h1>
         <hr>
-        <div class="row text-center">
+        <div class="row text-center mx-auto">
             {{ range $key, $value := .AllPollsIdAndTitles }}
-        
-            <div class="card poll-card col-sm">
-                <a href="/current/{{ $key }}">
-                    <h3>{{ $value }}</h3>
-                </a>
-            </div>
+            <div class="col-sm-3">
+                    <a href="/current/{{ $key }}" class="card poll-card m-1">
+                            <h3>{{ $value }}</h3>
+                    </a>
+                </div>
             {{ end }}
         </div>
     </div>

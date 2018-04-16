@@ -148,7 +148,7 @@ func (p *Poll) getPollOptions() (err error) {
 }
 
 func (p *Poll) submitVote(opt string) (err error) {
-	if p.asAlreadyVoted(currentUser) {
+	if !p.canVote(currentUser) {
 		return errors.New("USER AS ALREADY PARTICIPATED!")
 	}
 	var optID int
@@ -157,15 +157,14 @@ func (p *Poll) submitVote(opt string) (err error) {
 		log.Println(err)
 		return
 	}
-	row.Scan(&optID)
 
+	row.Scan(&optID)
 	query := "INSERT INTO VOTES (OPTIONS, USER_ID, POLL_ID) VALUES ($1, $2, $3);"
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-
 	_, err = stmt.Exec(optID, currentUser.id, p.ID)
 	if err != nil {
 		log.Println(err)
@@ -174,20 +173,17 @@ func (p *Poll) submitVote(opt string) (err error) {
 	return
 }
 
-func (p *Poll) asAlreadyVoted(user User) bool {
-	fmt.Println(user.id, p.ID)
+func (p *Poll) canVote(user User) bool {
 	res, err := db.Exec("SELECT VOTE_ID FROM VOTES WHERE USER_ID=$1 AND POLL_ID=$2;", user.id, p.ID)
 	if err != nil {
 		log.Println(err)
 		return true
 	}
 	VID, _ := res.RowsAffected()
-	fmt.Println(VID)
-	if VID != 0 {
+	if VID == 0 {
 		return true
 	}
 	return false
-
 }
 
 func (p *Poll) getOptions() (err error) {

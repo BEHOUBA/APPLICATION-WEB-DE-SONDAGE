@@ -1,46 +1,60 @@
 {{ define "content"}}
 <div class="mx-5">
     <div>
-        <h1>POLL NAME: </h1>
+        <h1 class="text-center">{{ .CurrentPoll.Title }}</h1>
     </div>
-    <div>
-        <form action="/submit-vote" method="POST">
-            {{ if .CurrentUser }}
-            <div class="form-group">
-                    {{ range  .CurrentPoll.Options }}
-                    <div class="custom-control custom-radio mx-1 my-4">
-                        <input type="radio" id="{{ .ID }}" name="option" class="custom-control-input" value="{{ .ID }}">
-                        <label class="custom-control-label" for="{{ .ID }}">{{ .Name }}</label>
-                    </div>
-                    {{ end }}
-                    <div  class="mx-1 my-4">
-                        <input type="submit" name="" id="" value="submit vote" class="btn btn-success btn-sm">
-                    </div>
-            </div>
-        </form>
-        {{ end }}
+    <div class="row">
+    {{ if .CurrentUser.CanVote }}
+        <div class="col-md mx-auto">
+            <form action="/submit-vote" method="POST">
+                <div class="form-group">
+                        {{ range  .CurrentPoll.Options }}
+                        <div class="custom-control custom-radio mx-1 my-4">
+                            <input type="radio" id="{{ .ID }}" name="option" class="custom-control-input" value="{{ .Name }}">
+                            <label class="custom-control-label" for="{{ .ID }}">{{ .Name }}</label>
+                        </div>
+                        {{ end }}
+                        <div  class="mx-1 my-4">
+                            <input type="submit" name="" id="" value="submit vote" class="btn btn-success btn-sm">
+                        </div>
+                </div>
+            </form>
         </div>
-        <div id="piechart"></div>
+        {{ end }}
+        <div class="col-md mx-auto">
+                <div id="piechart" class="text-center"></div>
+        </div>      
     </div>
 </div>
 <script type="text/javascript">
+        var url = window.location.href + "/api/";
+        var chartData = [];
+        var xhr = new XMLHttpRequest()
+        xhr.onreadystatechange = function(){
+            if (this.readyState === 4 && this.status === 200){
+                var jsonData = JSON.parse(this.response);
+                chartData.push(["Task", jsonData.title]);
+                for (var i in jsonData.data){
+                    chartData.push(jsonData.data[i]);
+                }
+                console.log(chartData)
+            }
+        }
+        xhr.open("GET", url, true);
+        xhr.send();
         // Load google charts
         google.charts.load('current', {'packages':['corechart']});
         google.charts.setOnLoadCallback(drawChart);
 
         // Draw the chart and set the chart values
         function drawChart() {
-        var data = google.visualization.arrayToDataTable([
-        ['Task', 'Percentage'],
-        ['Work', 80],
-        ['Friends', 20],
-        ]);
+        var data = google.visualization.arrayToDataTable(chartData);
 
         // Optional; add a title and set the width and height of the chart
-        var options = {'title':'FRUITS', 'width':400, 'height':300};
+        var options = {'title': chartData[0][1], 'width':"100%", 'height':500, is3D: true};
 
         // Display the chart inside the <div> element with id="piechart"
-        var chart = new google.visualization.ColumnChart(document.getElementById('piechart'));
+        var chart = new google.visualization.BarChart(document.getElementById('piechart'));
         chart.draw(data, options);
         }
 </script>
