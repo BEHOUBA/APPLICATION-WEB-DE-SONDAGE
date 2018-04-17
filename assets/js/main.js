@@ -1,11 +1,13 @@
 let count = 0;
 
+const options_value = document.getElementById("all_options");
 const option = document.getElementById("option");
 const options = document.getElementById("options");
 const password1 = document.getElementById("password");
 const password2 = document.getElementById("password2");
 const name = document.getElementById("name");
 const email = document.getElementById("email");
+const poll_name = document.getElementById("poll_name");
 
 function addOption(){
        if (option.value == "") {
@@ -25,8 +27,9 @@ function submitNewPoll(){
         return;
     }
     option.value = "";
-    option.value = options.innerText;
+    options_value.value = options.innerText;
     document.getElementById("poll-form").submit();
+    poll_name.value = "";
 }
 
 function submitNewUser(){

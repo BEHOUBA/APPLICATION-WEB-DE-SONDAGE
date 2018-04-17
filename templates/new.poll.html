@@ -13,11 +13,16 @@
                 <p>OPTIONS</p>
             </div>
             <div class="form-row">
-                <input type="text" name="poll-options" class="form-control col-sm mr-4" placeholder="Option here" id="option" required>
-                <a onclick="addOption()" class="btn btn-lg btn-success col-sm">ADD OPTION</a>
+                <div class="col-sm pb-4">
+                        <input type="text"  class="form-control" placeholder="Option here" id="option" required>
+                        <input type="text" style="display: none;" id="all_options" name="poll-options">
+                </div>
+                <div class="col-sm">
+                        <a onclick="addOption()" class="btn btn-block btn-success">ADD OPTION</a>
+                </div>
             </div>
             <div id="options">
-
+                
             </div>
             <div class="form-group mt-5">
                 <a  class="btn btn-lg btn-block btn-success" onclick="submitNewPoll()">CREATE POLL</a>

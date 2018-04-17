@@ -45,7 +45,7 @@ func createPoll(w http.ResponseWriter, r *http.Request) {
 
 	poll.Title = r.FormValue("poll-name")
 	options = strings.Split(r.FormValue("poll-options"), "×")[1:]
-
+	fmt.Println(options,  "this is options")
 	for _, val := range options {
 		poll.Options = append(poll.Options, Option{Name: val})
 	}
