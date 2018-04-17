@@ -12,18 +12,26 @@ import (
 )
 
 func submitVote(w http.ResponseWriter, r *http.Request) {
+	setCurrentData(w, r)
+	data.Vote.Poll_ID, err = strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		log.Println(err)
+	}
 	currentUser, err = getUserDataFromDB("voting_app", r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	r.ParseForm()
-	vote := r.FormValue("option")
-	err = currentPoll.submitVote(vote)
+	data.Vote.Name = r.FormValue("option")
+
+	err = currentPoll.submitVote(data.Vote.Name)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		data.Error = err
+		generateHTML(w, r, data, "home", "error", "footer")
+		return
 	}
-	fmt.Fprintln(w, vote)
+	generateHTML(w, r, data, "home", "success.vote", "footer")
 }
 
 func createPoll(w http.ResponseWriter, r *http.Request) {
@@ -42,13 +50,15 @@ func createPoll(w http.ResponseWriter, r *http.Request) {
 		poll.Options = append(poll.Options, Option{Name: val})
 	}
 
-	err := poll.addPollToDB()
+	id, err := poll.addPollToDB()
 	if err != nil {
 		log.Println("failed to add create poll", err)
 		fmt.Fprintln(w, "Error occured please contact admistrator: behouba@gmail.com.\n Error:", err)
 		return
 	}
-	generateHTML(w, r, "", "home", "current-poll", "footer")
+	url := "/current/" + strconv.Itoa(id)
+	log.Println(url)
+	http.Redirect(w, r, url, 302)
 }
 
 func setCurrentData(w http.ResponseWriter, r *http.Request) {
@@ -62,8 +72,13 @@ func setCurrentData(w http.ResponseWriter, r *http.Request) {
 	}
 	data.CurrentPoll.getAndSetTotalVotes()
 	data.CurrentPoll.getPollOptions()
-	data.CurrentUser.CanVote = data.CurrentPoll.canVote(data.CurrentUser)
-	fmt.Println(data.CurrentUser.CanVote)
+
+	if data.CurrentUser.id == 0 {
+		data.CurrentUser.CanVote = false
+	} else {
+		data.CurrentUser.CanVote = data.CurrentPoll.canVote(data.CurrentUser)
+	}
+
 	for i, opt := range data.CurrentPoll.Options {
 		data.CurrentPoll.Options[i].Votes, _ = opt.getAndSetTotalVotes()
 		if data.CurrentPoll.Votes == 0 {

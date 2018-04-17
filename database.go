@@ -88,21 +88,20 @@ func getUserDataFromDB(cookie string, r *http.Request) (User, error) {
 	return u, errors.New("user not found in database...")
 }
 
-func (p *Poll) addPollToDB() (err error) {
-	var pollID int
+func (p *Poll) addPollToDB() (id int, err error) {
 	stmt := "INSERT INTO POLLS (POLL_NAME, OWNER_ID) VALUES ($1, $2) RETURNING poll_id;"
-	err = db.QueryRow(stmt, p.Title, currentUser.id).Scan(&pollID)
+	err = db.QueryRow(stmt, p.Title, currentUser.id).Scan(&id)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	fmt.Println(pollID)
+	fmt.Println(id)
 	for _, val := range p.Options {
 		stmt2 := "INSERT INTO POLL_OPTIONS (OPTION_NAME, POLL) VALUES ($1, $2);"
-		_, err := db.Exec(stmt2, val.Name, pollID)
+		_, err := db.Exec(stmt2, val.Name, id)
 		if err != nil {
 			log.Println(err)
-			return err
+			return 0, err
 		}
 	}
 	fmt.Println("POLL ADD TO DATABASE SUCCESFULLY!!!")
@@ -111,7 +110,7 @@ func (p *Poll) addPollToDB() (err error) {
 
 func getAllPollTitle(limit, offset int) (idAndTitle map[int]string, err error) {
 	idAndTitle = map[int]string{}
-	stmt := "SELECT POLL_ID, POLL_NAME FROM POLLS LIMIT $1 OFFSET $2;"
+	stmt := "SELECT POLL_ID, POLL_NAME FROM POLLS ORDER BY POLL_ID DESC LIMIT $1 OFFSET $2;"
 	rows, err := db.Query(stmt, limit, offset)
 	if err != nil {
 		log.Println(err)
@@ -149,15 +148,15 @@ func (p *Poll) getPollOptions() (err error) {
 
 func (p *Poll) submitVote(opt string) (err error) {
 	if !p.canVote(currentUser) {
-		return errors.New("USER AS ALREADY PARTICIPATED!")
+		return errors.New("THANK YOU! YOU HAVE ALREADY PARTICIPATED")
 	}
 	var optID int
-	row := db.QueryRow("SELECT OPTION_ID FROM POLL_OPTIONS WHERE OPTION_NAME=$1 AND POLL=$2", opt, p.ID)
+	row := db.QueryRow("SELECT OPTION_ID FROM POLL_OPTIONS WHERE OPTION_NAME=$1 AND POLL=$2;", opt, p.ID)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-
+	fmt.Println(opt, p.ID)
 	row.Scan(&optID)
 	query := "INSERT INTO VOTES (OPTIONS, USER_ID, POLL_ID) VALUES ($1, $2, $3);"
 	stmt, err := db.Prepare(query)
@@ -177,7 +176,7 @@ func (p *Poll) canVote(user User) bool {
 	res, err := db.Exec("SELECT VOTE_ID FROM VOTES WHERE USER_ID=$1 AND POLL_ID=$2;", user.id, p.ID)
 	if err != nil {
 		log.Println(err)
-		return true
+		return false
 	}
 	VID, _ := res.RowsAffected()
 	if VID == 0 {

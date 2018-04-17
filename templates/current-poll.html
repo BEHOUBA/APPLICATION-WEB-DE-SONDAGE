@@ -6,7 +6,7 @@
     <div class="row">
     {{ if .CurrentUser.CanVote }}
         <div class="col-md mx-auto">
-            <form action="/submit-vote" method="POST">
+            <form action="/current/{{ .CurrentPoll.ID }}/submit_vote" method="POST">
                 <div class="form-group">
                         {{ range  .CurrentPoll.Options }}
                         <div class="custom-control custom-radio mx-1 my-4">

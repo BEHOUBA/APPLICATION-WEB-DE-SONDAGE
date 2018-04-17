@@ -20,13 +20,13 @@ func main() {
 	router.HandleFunc("/", homePage)
 	router.HandleFunc("/all", all)
 	router.HandleFunc("/new-poll", newPoll)
-	router.HandleFunc("/new-user/", newUser)
+	router.HandleFunc("/new-user", newUser)
 
 	router.HandleFunc("/current/{id}", current)
 	router.HandleFunc("/current/{id}/api/", sendJSON)
 	router.HandleFunc("/create-pool", createPoll)
 
-	router.HandleFunc("/submit-vote", submitVote)
+	router.HandleFunc("/current/{id}/submit_vote", submitVote)
 
 	router.HandleFunc("/login", login)
 	router.HandleFunc("/logout", logout)

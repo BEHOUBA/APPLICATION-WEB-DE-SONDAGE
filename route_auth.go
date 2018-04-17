@@ -19,14 +19,21 @@ type chartData struct {
 	Data  [][]interface{} `json:"data"`
 }
 
+type Vote struct {
+	Name    string
+	Poll_ID int
+}
+
 type PageData struct {
 	CurrentUser         User
 	AllPollsIdAndTitles map[int]string
 	CurrentPoll         Poll
+	Vote                Vote
+	Error               error
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
-	homeData.AllPollsIdAndTitles, err = getAllPollTitle(10, 0)
+	homeData.AllPollsIdAndTitles, err = getAllPollTitle(12, 0)
 	if err != nil {
 		log.Println(err)
 	}

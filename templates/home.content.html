@@ -1,8 +1,10 @@
 {{ define "content"}}
 <div>
     <div class="page-body text-center my-5" >
-        <h1 class="display-3">VOTING APPLICATION</h1>
-        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Sed quas, est laboriosam dolorum quam veritatis at magnam vel autem, amet neque expedita, ad illum excepturi pariatur ipsa. Eum, pariatur molestiae!</p>
+        <h1>VOTING APPLICATION</h1>
+        <p class="m-5">
+            CREATE A POLL WITH SOME OPTIONS AND YOU AND OTHER PEOPLE CAN VOTE AND SEE THE CURRENT TREND OF THE POLL.
+        </p>
         <a href="/new-poll" class="btn btn-info btn-lg">CREATE A NEW POLL</a>
     </div>
     <div class="recent">
@@ -10,7 +12,7 @@
         <hr>
         <div class="row text-center mx-auto">
             {{ range $key, $value := .AllPollsIdAndTitles }}
-            <div class="col-sm-3">
+            <div class="col-md-3">
                     <a href="/current/{{ $key }}" class="card poll-card m-1">
                             <h3>{{ $value }}</h3>
                     </a>
