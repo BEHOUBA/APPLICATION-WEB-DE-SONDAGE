@@ -22,8 +22,7 @@ func submitVote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	r.ParseForm()
-	data.Vote.Name = r.FormValue("option")
-
+	data.Vote.Name = r.FormValue(data.CurrentPoll.Title)
 	err = currentPoll.submitVote(data.Vote.Name)
 	if err != nil {
 		log.Println(err)
@@ -45,7 +44,7 @@ func createPoll(w http.ResponseWriter, r *http.Request) {
 
 	poll.Title = r.FormValue("poll-name")
 	options = strings.Split(r.FormValue("poll-options"), "×")[1:]
-	fmt.Println(options,  "this is options")
+	fmt.Println(options, "this is options")
 	for _, val := range options {
 		poll.Options = append(poll.Options, Option{Name: val})
 	}
@@ -61,19 +60,30 @@ func createPoll(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, url, 302)
 }
 
+func userPolls(w http.ResponseWriter, r *http.Request) {
+	setCurrentData(w, r)
+	data.CurrentUser.OwnPolls, err = currentUser.getOwnPoll()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	fmt.Println(data)
+	generateHTML(w, r, data, "home", "user.polls", "footer")
+}
+
 func setCurrentData(w http.ResponseWriter, r *http.Request) {
 	currentUser, _ = getUserDataFromDB("voting_app", r)
 	currentPoll.ID, err = strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		log.Println(err)
+	}
 	data.CurrentUser = currentUser
 	data.CurrentPoll.ID = currentPoll.ID
 	data.CurrentPoll.setTitle()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
 	data.CurrentPoll.getAndSetTotalVotes()
 	data.CurrentPoll.getPollOptions()
 
-	if data.CurrentUser.id == 0 {
+	if data.CurrentUser.ID == 0 {
 		data.CurrentUser.CanVote = false
 	} else {
 		data.CurrentUser.CanVote = data.CurrentPoll.canVote(data.CurrentUser)
@@ -90,10 +100,24 @@ func setCurrentData(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func deletePoll(w http.ResponseWriter, r *http.Request) {
+	data.CurrentPoll.ID, err = strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	err = data.CurrentPoll.deletePoll()
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+	http.Redirect(w, r, "/user_polls", 302)
+}
+
 func current(w http.ResponseWriter, r *http.Request) {
 	setCurrentData(w, r)
+	fmt.Println(data)
 	generateHTML(w, r, data, "home", "current-poll", "footer")
-	return
 }
 
 func sendJSON(w http.ResponseWriter, r *http.Request) {

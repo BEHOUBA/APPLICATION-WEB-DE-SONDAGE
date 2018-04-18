@@ -1,0 +1,35 @@
+{{ define "content"}}
+<div>
+    <div class="recent">
+        <h1 class="text-center">YOUR POLLS</h1>
+        <hr>
+        <div class="row text-center">
+            {{ range $key, $value := .CurrentUser.OwnPolls }}
+            <div class="col-md-4">
+                <div class="card  m-2">
+                    <div class="card-body">
+                        <div class="card-title">
+                                <a href="/current/{{ $key }}">
+                                    <h4>{{ $value }}</h4>
+                                </a>
+                        </div>
+                            <small><button class="mt-2" data-toggle="modal" data-target="#{{$key}}">Delete</button></small>
+                            <div class="modal fade" id="{{$key}}" role="dialog" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-body">
+                                            <h3>Do you want to delete {{ $value }}'s poll?</h3>
+                                            <a class="btn btn-primary" data-dismiss="modal">NO</a>
+                                            <a class="btn btn-danger" href="/delete/{{$key}}">YES</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+                </div>       
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</div>
+{{ end }}

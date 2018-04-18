@@ -117,6 +117,6 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println("invalid login!")
-	fmt.Fprintln(w, "Email or Password is wrong... or maybe you are not registred yet...")
-	http.Redirect(w, r, "/loginPage", 302)
+	errorMessage := "Email or Password is wrong... or maybe you are not registred yet..."
+	generateHTML(w, r, errorMessage, "home", "login", "footer")
 }

@@ -53,7 +53,7 @@ func (user *User) isEmailInDatabase() bool {
 	var u = User{}
 	stmt := "SELECT * FROM USERS WHERE EMAIL=$1;"
 	row := db.QueryRow(stmt, user.Email)
-	row.Scan(&user.id, &user.Name, &u.Email, &u.Password, &user.hash)
+	row.Scan(&user.ID, &user.Name, &u.Email, &u.Password, &user.hash)
 	if u.Email == user.Email {
 		fmt.Println("user email is in the database", u)
 		return true
@@ -65,8 +65,8 @@ func (user *User) isEmailInDatabase() bool {
 func (user *User) authentification() bool {
 	stmt := "SELECT * FROM USERS WHERE PASSWORD=$1 AND EMAIL=$2;"
 	row := db.QueryRow(stmt, user.Password, user.Email)
-	row.Scan(&user.id, &user.Name, &user.Email, &user.Password, &user.hash)
-	if user.Email != "" {
+	row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.hash)
+	if user.ID != 0 {
 		fmt.Println("user authentificated !")
 		return true
 	}
@@ -81,16 +81,31 @@ func getUserDataFromDB(cookie string, r *http.Request) (User, error) {
 	var u User
 	stmt := "SELECT * FROM USERS WHERE PASSWORD_HASH=$1;"
 	row := db.QueryRow(stmt, cook.Value)
-	row.Scan(&u.id, &u.Name, &u.Email, &u.Password, &u.hash)
+	row.Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.hash)
 	if u.Name != "" {
 		return u, nil
 	}
 	return u, errors.New("user not found in database...")
 }
 
+func (p *Poll) addNewOption(newOption string) (id int, err error) {
+	stmt, err := db.Prepare("INSERT INTO POLL_OPTIONS (OPTION_NAME, POLL) VALUES ($1, $2);")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	_, err = stmt.Exec(newOption, p.ID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	p.submitVote(newOption)
+	return
+}
+
 func (p *Poll) addPollToDB() (id int, err error) {
 	stmt := "INSERT INTO POLLS (POLL_NAME, OWNER_ID) VALUES ($1, $2) RETURNING poll_id;"
-	err = db.QueryRow(stmt, p.Title, currentUser.id).Scan(&id)
+	err = db.QueryRow(stmt, p.Title, currentUser.ID).Scan(&id)
 	if err != nil {
 		log.Println(err)
 		return
@@ -152,20 +167,21 @@ func (p *Poll) submitVote(opt string) (err error) {
 	}
 	var optID int
 	row := db.QueryRow("SELECT OPTION_ID FROM POLL_OPTIONS WHERE OPTION_NAME=$1 AND POLL=$2;", opt, p.ID)
-	if err != nil {
-		log.Println(err)
+	row.Scan(&optID)
+	if optID == 0 {
+		fmt.Println("option id == 0")
+		p.addNewOption(opt)
 		return
 	}
-	fmt.Println(opt, p.ID)
-	row.Scan(&optID)
 	query := "INSERT INTO VOTES (OPTIONS, USER_ID, POLL_ID) VALUES ($1, $2, $3);"
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	_, err = stmt.Exec(optID, currentUser.id, p.ID)
+	_, err = stmt.Exec(optID, currentUser.ID, p.ID)
 	if err != nil {
+		fmt.Println(opt, p.ID, optID)
 		log.Println(err)
 		return
 	}
@@ -173,7 +189,7 @@ func (p *Poll) submitVote(opt string) (err error) {
 }
 
 func (p *Poll) canVote(user User) bool {
-	res, err := db.Exec("SELECT VOTE_ID FROM VOTES WHERE USER_ID=$1 AND POLL_ID=$2;", user.id, p.ID)
+	res, err := db.Exec("SELECT VOTE_ID FROM VOTES WHERE USER_ID=$1 AND POLL_ID=$2;", user.ID, p.ID)
 	if err != nil {
 		log.Println(err)
 		return false
@@ -237,5 +253,59 @@ func (opt *Option) getAndSetTotalVotes() (count int, err error) {
 	}
 	stmt.QueryRow(opt.ID).Scan(&count)
 	opt.Votes = count
+	return
+}
+
+func (user *User) getOwnPoll() (idAndTitle map[int]string, err error) {
+	idAndTitle = make(map[int]string)
+	stmt, err := db.Prepare("SELECT POLL_ID, POLL_NAME FROM POLLS WHERE OWNER_ID=$1")
+	if err != nil {
+		return
+	}
+	rows, err := stmt.Query(user.ID)
+	if err != nil {
+		return
+	}
+
+	for rows.Next() {
+		var id int
+		var pollName string
+		rows.Scan(&id, &pollName)
+		idAndTitle[id] = pollName
+	}
+	return
+}
+
+func (p *Poll) deletePoll() (err error) {
+	stmt, err := db.Prepare("DELETE FROM VOTES WHERE POLL_ID=$1")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	stmt2, err := db.Prepare("DELETE FROM POLL_OPTIONS WHERE POLL=$1")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	stmt3, err := db.Prepare("DELETE FROM POLLS WHERE POLL_ID=$1;")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	_, err = stmt.Exec(p.ID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	_, err = stmt2.Exec(p.ID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	_, err = stmt3.Exec(p.ID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	return
 }

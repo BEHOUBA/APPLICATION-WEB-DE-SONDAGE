@@ -3,19 +3,20 @@
     <div>
         <h1 class="text-center">{{ .CurrentPoll.Title }}</h1>
     </div>
-    <div class="row">
+    <div class="row justify-content-center">
     {{ if .CurrentUser.CanVote }}
-        <div class="col-md mx-auto">
-            <form action="/current/{{ .CurrentPoll.ID }}/submit_vote" method="POST">
+        <div class="col-md mt-5">
+            <form action="/current/{{ .CurrentPoll.ID }}/submit_vote" method="POST" id="vote_form">
                 <div class="form-group">
+                    <select class="form-control mx-1 my-4" name="{{.CurrentPoll.Title}}" onclick="if ( this.value == 'Add new option') addNewOption();" >
                         {{ range  .CurrentPoll.Options }}
-                        <div class="custom-control custom-radio mx-1 my-4">
-                            <input type="radio" id="{{ .ID }}" name="option" class="custom-control-input" value="{{ .Name }}">
-                            <label class="custom-control-label" for="{{ .ID }}">{{ .Name }}</label>
-                        </div>
+                            <option  id="{{ .ID }}" name="option" value="{{ .Name }}">{{ .Name }}</option>
                         {{ end }}
+                            <option id="add_option">Add new option</option>
+                    </select>
                         <div  class="mx-1 my-4">
-                            <input type="submit" name="" id="" value="submit vote" class="btn btn-success btn-sm">
+                            <input type="text" class="form-control my-2" name="new_option" style="display: none;" id="new_option" placeholder="add new option to this poll">
+                            <input onclick="submitVote()" name="" id="" value="submit vote" class="btn btn-success btn-sm btn-block">
                         </div>
                 </div>
             </form>
@@ -51,7 +52,7 @@
         var data = google.visualization.arrayToDataTable(chartData);
 
         // Optional; add a title and set the width and height of the chart
-        var options = {'title': chartData[0][1], 'width':"100%", 'height':500, is3D: true};
+        var options = {'title': chartData[0][1], 'width':"100%", 'height':500};
 
         // Display the chart inside the <div> element with id="piechart"
         var chart = new google.visualization.BarChart(document.getElementById('piechart'));
